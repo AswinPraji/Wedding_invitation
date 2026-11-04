@@ -315,8 +315,8 @@ function initInvitationApp() {
     // 3. Step 2: Closed Book
     const closedH = Math.min(availHBook, availW / SINGLE_RATIO);
     let closedScale = bookH > 0 ? (closedH / bookH) : 1;
-    // Cap closed scale between 1.0 and 2.0 to maintain natural proportions
-    closedScale = Math.max(1, Math.min(closedScale, 2.0));
+    // Cap closed scale between 1.0 and 1.5 to maintain natural proportions and guaranteed fit
+    closedScale = Math.max(1, Math.min(closedScale, 1.5));
 
     const rootStyle = document.documentElement.style;
     rootStyle.setProperty('--cover-width', `${Math.round(coverW)}px`);
