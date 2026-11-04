@@ -162,6 +162,7 @@ html, body {
     0 0 25px rgba(212, 175, 55, 0.12);
   transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.4s ease;
   cursor: pointer;
+  background-color: var(--bg-navy);
 }
 
 .card-wrapper:hover {
@@ -173,9 +174,12 @@ html, body {
 }
 
 .invitation-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  position: absolute;
+  top: 0;
+  left: -2.93%;
+  width: 103.11%;
+  height: 102.48%;
+  object-fit: fill;
   display: block;
   pointer-events: none;
 }
@@ -325,12 +329,17 @@ html, body {
   height: var(--book-height);
   transform-style: preserve-3d;
   transform-origin: 50% 50%;
+  background-color: var(--bg-navy);
+  border-radius: 4px;
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.65),
+    0 2px 10px rgba(0, 0, 0, 0.4);
   transition: transform var(--book-anim-dur) var(--book-anim-ease);
 }
 
-/* When FOLDED (Step 2): Center stays at 50% 50%, smoothly scaled on mobile portrait */
+/* When FOLDED (Step 2): Center stays at 50% 50%, 1:1 physical card dimension */
 .tri-fold-container.folded {
-  transform: scale(var(--closed-scale, 1));
+  transform: scale(1);
 }
 
 /* When UNFOLDED (Step 3): Full 3-panel spread at 100% width */
@@ -362,37 +371,52 @@ html, body {
 .panel-center {
   left: 25%;
   width: 50%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  background-color: var(--bg-navy);
   z-index: 2;
-  box-shadow: 
-    0 15px 35px rgba(0, 0, 0, 0.7),
-    inset 0 0 30px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Left & Right Fold Creases on Center Panel */
+/* Crop the 16px left white border and 18px bottom white border from inside_left.jpg */
+.panel-center .panel-image {
+  position: absolute;
+  top: 0;
+  left: -2.93%;
+  width: 103.11%;
+  height: 102.48%;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
+}
+
+/* Subtle Left & Right Fold Creases on Center Panel */
 .fold-shadow {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 24px;
+  width: 10px;
   pointer-events: none;
   z-index: 5;
 }
 
 .fold-shadow-left {
   left: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.12) 70%, transparent 100%);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.28) 0%, transparent 100%);
 }
 
 .fold-shadow-right {
   right: 0;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.12) 70%, transparent 100%);
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.28) 0%, transparent 100%);
 }
 
-/* Center Shade Overlay (fades out as flaps open) */
+/* Center Shade Overlay (ensures 100% solid navy background when folded) */
 .center-shade-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--bg-navy);
   opacity: 1;
   pointer-events: none;
   transition: opacity var(--book-anim-dur) ease;
@@ -425,11 +449,11 @@ html, body {
 }
 
 .tri-fold-container.folded .flap-left {
-  transform: rotateY(-180deg);
+  transform: rotateY(-180deg) translateZ(1px);
 }
 
 .tri-fold-container.unfolded .flap-left {
-  transform: rotateY(0deg);
+  transform: rotateY(0deg) translateZ(0);
   cursor: default;
 }
 
@@ -440,11 +464,11 @@ html, body {
 }
 
 .tri-fold-container.folded .flap-right {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(1px);
 }
 
 .tri-fold-container.unfolded .flap-right {
-  transform: rotateY(0deg);
+  transform: rotateY(0deg) translateZ(0);
   cursor: default;
 }
 
@@ -463,64 +487,80 @@ html, body {
 .flap-face-inner {
   transform: rotateY(0deg);
   background-color: var(--bg-navy);
+  overflow: hidden;
 }
 
 .flap-left .flap-face-inner {
   border-radius: 4px 0 0 4px;
-  box-shadow: -10px 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.flap-left .flap-face-inner .panel-image {
+  position: absolute;
+  top: 0;
+  left: -1%;
+  width: 101%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
 }
 
 .flap-right .flap-face-inner {
   border-radius: 0 4px 4px 0;
-  box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.flap-right .flap-face-inner .panel-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 101%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
 }
 
 /* Outer Face: Completely Blank Closed Invitation (visible when folded) */
 .flap-face-outer {
   transform: rotateY(180deg);
-  background: linear-gradient(135deg, #091224 0%, #0d1a33 50%, #070e1c 100%);
-  border: 1px solid rgba(212, 175, 55, 0.22);
+  background: linear-gradient(145deg, #0b172e 0%, #081225 50%, #060e1c 100%);
+  overflow: hidden;
 }
 
 .blank-surface {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.04) 0%, transparent 80%);
+  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.04) 0%, transparent 75%);
 }
 
 .flap-outer-left {
-  border-radius: 4px 0 0 4px;
-  border-right: none;
-  box-shadow: 
-    -12px 12px 35px rgba(0, 0, 0, 0.7),
-    inset -4px 0 15px rgba(0, 0, 0, 0.3);
+  border-radius: 0 4px 4px 0;
+  box-shadow: -6px 6px 20px rgba(0, 0, 0, 0.55);
 }
 
 .flap-outer-right {
-  border-radius: 0 4px 4px 0;
-  border-left: 1px solid rgba(212, 175, 55, 0.35);
-  box-shadow: 
-    12px 12px 35px rgba(0, 0, 0, 0.7),
-    inset 4px 0 15px rgba(0, 0, 0, 0.3);
+  border-radius: 4px 0 0 4px;
+  box-shadow: 6px 6px 20px rgba(0, 0, 0, 0.55);
 }
 
-/* Seam shadow where both blank flaps meet in the center when folded */
+/* Subtle hairline shadow where flaps meet at center seam */
 .seam-shadow {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 12px;
   pointer-events: none;
 }
 
 .seam-shadow-left {
-  right: 0;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+  left: 0;
+  width: 4px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
 }
 
 .seam-shadow-right {
-  left: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+  right: 0;
+  width: 4px;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
 }
 
 /* Folded Prompt (subtle prompt centered on the folded blank card) */

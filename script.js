@@ -290,44 +290,56 @@ function initInvitationApp() {
 
   // =========================================================================
   // DYNAMIC RESPONSIVE LAYOUT CALCULATION
-  // Ensures invitation fits screen across mobile, tablet, desktop, and orientations
+  // Treats the entire invitation as ONE physical, proportionally scaled object
   // =========================================================================
-  const SINGLE_RATIO = 564 / 787;      // ~0.7166455 (Cover and Folded card ratio)
-  const SPREAD_RATIO = 1128 / 787;     // ~1.433291 (Full 3-panel 25% + 50% + 25% spread ratio)
+  const SINGLE_RATIO = 547 / 768;        // ~0.7122396 (Center panel and Cover artwork ratio)
+  const SPREAD_RATIO = SINGLE_RATIO * 2;   // ~1.4244792 (Complete 3-panel spread: 25% + 50% + 25%)
 
   function updateResponsiveLayout() {
     const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
     const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
-    // Responsive padding based on viewport size
-    const padX = vw < 480 ? 12 : (vw < 768 ? 16 : 24);
-    const padYBook = vh < 500 ? 46 : (vh < 700 ? 56 : 68);
-    const padYCover = vh < 500 ? 20 : (vh < 700 ? 28 : 36);
+    // Comfortable, visually balanced padding so invitation does not stretch edge-to-edge
+    const isMobile = vw < 600;
+    const padX = isMobile ? Math.max(32, Math.round(vw * 0.10)) : (vw < 900 ? 56 : 80);
+    const padYBook = vh < 500 ? 50 : (vh < 700 ? 64 : 76);
+    const padYCover = vh < 500 ? 24 : (vh < 700 ? 36 : 48);
 
     const availW = Math.max(vw - padX, 160);
     const availHBook = Math.max(vh - padYBook, 160);
     const availHCover = Math.max(vh - padYCover, 160);
 
-    // 1. Step 1: Cover Card (single portrait image)
-    const coverH = Math.min(availHCover, availW / SINGLE_RATIO);
-    const coverW = coverH * SINGLE_RATIO;
-
-    // 2. Step 3: Unfolded 3-Panel Spread (Left 25% + Center 50% + Right 25%)
-    const bookH = Math.min(availHBook, availW / SPREAD_RATIO);
+    // 1. Step 3: Unfolded 3-Panel Spread
+    // Calculate proportional scale based on available width and height as ONE physical object
+    const maxDesktopH = 740;
+    const bookH = Math.min(availHBook, maxDesktopH, availW / SPREAD_RATIO);
     const bookW = bookH * SPREAD_RATIO;
 
-    // 3. Step 2: Folded Invitation (center 50% visible, ratio identical to SINGLE_RATIO)
-    const closedH = Math.min(availHBook, availW / SINGLE_RATIO);
-    let closedScale = bookH > 0 ? (closedH / bookH) : 1;
-    // Cap closed scale between 1.0 and 1.6 to maintain natural proportions and guaranteed fit
-    closedScale = Math.max(1, Math.min(closedScale, 1.6));
+    // 2. Physical center panel / folded card dimensions
+    // Maintains the exact same physical card dimensions as the unfolded center panel
+    const centerPanelW = bookW * 0.5;
+    const centerPanelH = bookH;
+
+    // 3. Step 1: Cover Card
+    let coverW;
+    let coverH;
+    if (isMobile) {
+      // Fit nicely within portrait viewport with balanced breathing room
+      const maxCoverW = Math.min(availW, 340);
+      coverH = Math.min(availHCover, maxCoverW / SINGLE_RATIO);
+      coverW = coverH * SINGLE_RATIO;
+    } else {
+      // On desktop, match the physical invitation scale
+      coverH = centerPanelH;
+      coverW = centerPanelW;
+    }
 
     const rootStyle = document.documentElement.style;
     rootStyle.setProperty('--cover-width', `${Math.round(coverW)}px`);
     rootStyle.setProperty('--cover-height', `${Math.round(coverH)}px`);
     rootStyle.setProperty('--book-width', `${Math.round(bookW)}px`);
     rootStyle.setProperty('--book-height', `${Math.round(bookH)}px`);
-    rootStyle.setProperty('--closed-scale', closedScale.toFixed(4));
+    rootStyle.setProperty('--center-width', `${Math.round(centerPanelW)}px`);
   }
 
   // Initial calculation & event listeners
