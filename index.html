@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wedding Invitation | Sneha & Uday</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background lighting -->
+  <div class="ambient-background"></div>
+
+  <main class="invitation-app">
+    <!-- STEP 1: Initial Cover (Single portrait image) -->
+    <section class="step-view step-cover active" id="stepCover" aria-label="Invitation Cover">
+      <div class="card-container" id="coverCardContainer">
+        <div class="card-wrapper" id="coverCard" role="button" tabindex="0" aria-label="Wedding Invitation Cover. Swipe left or tap to continue.">
+          <img src="assets/cover.jpg" alt="Wedding Invitation - 25 Nov 2026" class="invitation-image" draggable="false">
+          <!-- Subtle swipe / tap hint -->
+          <div class="interaction-hint">
+            <span class="hint-text">Swipe left or tap</span>
+            <span class="hint-arrow">→</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2 & STEP 3: Closed Book & Open Book Spread -->
+    <section class="step-view step-book" id="stepBook" aria-label="Wedding Invitation Book">
+      <!-- Top navigation / close controls -->
+      <nav class="book-nav" id="bookNav" aria-label="Invitation navigation">
+        <button type="button" class="nav-btn" id="btnBackToCover" aria-label="Back to cover">
+          <span class="nav-icon">←</span>
+          <span class="nav-label">Cover</span>
+        </button>
+        <button type="button" class="nav-btn close-btn" id="btnCloseBook" aria-label="Close invitation book">
+          <span class="nav-label">Close Book</span>
+          <span class="nav-icon">✕</span>
+        </button>
+      </nav>
+
+      <!-- 3D Book Stage -->
+      <div class="book-stage" id="bookStage">
+        <div class="book-container closed" id="bookContainer">
+          
+          <!-- Inside Left Page (Image 3) -->
+          <div class="book-page page-left" id="pageLeft">
+            <img src="assets/inside_left.jpg" alt="Wedding Invitation Celebration Details" class="page-image" draggable="false">
+            <div class="page-crease crease-left"></div>
+            <div class="page-overlay" id="leftOverlay"></div>
+          </div>
+
+          <!-- Inside Right Page (Image 4) -->
+          <div class="book-page page-right" id="pageRight">
+            <img src="assets/inside_right.jpg" alt="Wedding Calendar and Locations" class="page-image" draggable="false">
+            <div class="page-crease crease-right"></div>
+            <div class="page-overlay" id="rightOverlay"></div>
+
+            <!-- Clickable QR Code Hotspots -->
+            <a href="https://www.google.com/maps/search/?api=1&query=41%2C+2nd+D+Cross+Rd%2C+Chikka+Banaswadi%2C+OMBR+Layout%2C+Banaswadi%2C+Bengaluru%2C+Karnataka+560043" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="qr-hitbox qr-church" 
+               id="qrChurch"
+               title="Open Church Location in Google Maps"
+               aria-label="Open Church Location (St. Vincent Pallotti Church) in Google Maps">
+              <span class="qr-glow-ring"></span>
+            </a>
+
+            <a href="https://maps.app.goo.gl/Vu8y6fwdc5gVqGgn9?g_st=aw" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="qr-hitbox qr-reception" 
+               id="qrReception"
+               title="Open Reception Location in Google Maps"
+               aria-label="Open Reception Location (Crystal Hall Spacez Villa) in Google Maps">
+              <span class="qr-glow-ring"></span>
+            </a>
+          </div>
+
+          <!-- Turning Cover Leaf (Pivots at the center spine) -->
+          <div class="turning-leaf" id="turningLeaf" role="button" tabindex="0" aria-label="Invitation Cover Book. Tap to open.">
+            <!-- Front Face: Image 2 (Closed book cover) -->
+            <div class="leaf-face leaf-front">
+              <img src="assets/closed_book.jpg" alt="Closed Wedding Invitation Book" class="page-image" draggable="false">
+              <div class="spine-shade-edge"></div>
+              <div class="face-overlay" id="frontOverlay"></div>
+              <div class="tap-open-prompt" id="tapOpenPrompt">
+                <span class="prompt-icon">✧</span>
+                <span class="prompt-text">Tap to open</span>
+              </div>
+            </div>
+
+            <!-- Back Face: Image 3 (Inside left page as seen during & after opening turn) -->
+            <div class="leaf-face leaf-back">
+              <img src="assets/inside_left.jpg" alt="Wedding Invitation Celebration Details" class="page-image" draggable="false">
+              <div class="page-crease crease-left"></div>
+              <div class="face-overlay" id="backOverlay"></div>
+            </div>
+          </div>
+
+          <!-- Center Spine Crease & Shadow -->
+          <div class="book-spine-line" id="spineLine"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
+

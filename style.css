@@ -1,0 +1,698 @@
+/* ==========================================================================
+   Wedding Invitation Stylesheet
+   Follows exact aesthetic: Luxury Midnight Blue & Gold
+   Zero extra clutter; exact aspect ratio preservation (564:787)
+   Responsive fit to screen across mobile, tablet, laptop, and desktop.
+   ========================================================================== */
+
+:root {
+  --single-ratio: 0.7166455; /* 564 / 787 */
+  --spread-ratio: 1.433291;  /* 1128 / 787 */
+  
+  --bg-deep: #050a14;
+  --bg-navy: #091224;
+  --bg-radial: #132244;
+  
+  --gold-accent: #d4af37;
+  --gold-light: #f3e5ab;
+  --gold-glow: rgba(212, 175, 55, 0.35);
+
+  /* Viewport available space fallbacks using dvh / vw */
+  --pad-x: 16px;
+  --pad-y-book: 64px;
+  --pad-y-cover: 36px;
+
+  --avail-w: calc(100vw - var(--pad-x));
+  --avail-h-book: calc(100dvh - var(--pad-y-book));
+  --avail-h-cover: calc(100dvh - var(--pad-y-cover));
+
+  /* Step 3 Open Book Spread Dimensions (Calculated for the ENTIRE book) */
+  --book-height: min(var(--avail-h-book), calc(var(--avail-w) / var(--spread-ratio)));
+  --book-width: calc(var(--book-height) * var(--spread-ratio));
+  --page-width: calc(var(--book-width) / 2);
+  --page-height: var(--book-height);
+
+  /* Step 1 Cover Card Dimensions */
+  --cover-height: min(var(--avail-h-cover), calc(var(--avail-w) / var(--single-ratio)));
+  --cover-width: calc(var(--cover-height) * var(--single-ratio));
+
+  /* Step 2 Closed Book Scale (dynamic in JS, default 1) */
+  --closed-scale: 1;
+
+  --book-anim-dur: 1.25s;
+  --book-anim-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: fixed;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, serif;
+  background-color: var(--bg-deep);
+  color: #fff;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ambient Deep Radial Background */
+.ambient-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(circle at 50% 45%, var(--bg-radial) 0%, var(--bg-navy) 50%, var(--bg-deep) 100%);
+  pointer-events: none;
+}
+
+/* Subtle ambient gold glow in center */
+.ambient-background::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75vmin;
+  height: 75vmin;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Main App Wrapper */
+.invitation-app {
+  position: relative;
+  width: 100vw;
+  height: 100%;
+  height: 100dvh;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Generic View Container */
+.step-view {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.step-view.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   STEP 1: Cover Card (First Image)
+   ========================================================================== */
+
+.step-cover {
+  cursor: grab;
+  padding: 12px;
+}
+
+.step-cover:active {
+  cursor: grabbing;
+}
+
+.card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.card-wrapper {
+  position: relative;
+  width: var(--cover-width);
+  height: var(--cover-height);
+  max-width: 96vw;
+  max-height: calc(100dvh - 24px);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.65),
+    0 5px 15px rgba(0, 0, 0, 0.4),
+    0 0 25px rgba(212, 175, 55, 0.12);
+  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.4s ease;
+  cursor: pointer;
+}
+
+.card-wrapper:hover {
+  transform: translateY(-3px) scale(1.008);
+  box-shadow: 
+    0 22px 45px rgba(0, 0, 0, 0.75),
+    0 8px 20px rgba(0, 0, 0, 0.45),
+    0 0 35px rgba(212, 175, 55, 0.22);
+}
+
+.invitation-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+/* Subtle Swipe / Tap Hint at Bottom */
+.interaction-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(9, 18, 36, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--gold-light);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  animation: floatHint 2.4s ease-in-out infinite;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+.hint-arrow {
+  font-size: 1rem;
+  animation: nudgeArrow 1.5s ease-in-out infinite;
+}
+
+@keyframes floatHint {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+
+@keyframes nudgeArrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+/* Slide Transition when leaving Step 1 */
+.step-cover.slide-out {
+  opacity: 0;
+  transform: translateX(-40px) scale(0.96);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* ==========================================================================
+   STEP 2 & STEP 3: Book Navigation & Stage
+   ========================================================================== */
+
+.step-book {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 10px 10px;
+  overflow: hidden;
+}
+
+/* Discreet Minimalist Top Nav */
+.book-nav {
+  width: 100%;
+  max-width: min(calc(var(--book-width) + 40px), 96vw);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+  min-height: 38px;
+  flex-shrink: 0;
+  z-index: 50;
+  pointer-events: auto;
+  margin-bottom: 6px;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(9, 18, 36, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--gold-light);
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.25s, border-color 0.25s, transform 0.2s, opacity 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.nav-btn:hover {
+  background: rgba(19, 34, 68, 0.95);
+  border-color: var(--gold-accent);
+  transform: translateY(-1px);
+}
+
+/* Hide close button when book is closed */
+.book-nav .close-btn {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.step-book.book-is-open .book-nav .close-btn {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* 3D Book Stage (Fills remaining height below nav) */
+.book-stage {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  perspective: 2500px;
+  overflow: visible;
+}
+
+/* ==========================================================================
+   Book Container & 3D Geometry
+   ========================================================================== */
+
+.book-container {
+  position: relative;
+  width: var(--book-width);
+  height: var(--book-height);
+  max-width: 98vw;
+  max-height: calc(100dvh - 56px);
+  transform-style: preserve-3d;
+  transition: transform var(--book-anim-dur) var(--book-anim-ease);
+}
+
+/* When CLOSED (Step 2): Shifted to center right cover, scaled to fit portrait screen */
+.book-container.closed {
+  transform: translateX(calc(-1 * var(--page-width) / 2)) scale(var(--closed-scale, 1));
+}
+
+/* When OPEN (Step 3): Container is centered; both pages visible side by side */
+.book-container.open {
+  transform: translateX(0) scale(1);
+}
+
+/* Base Pages */
+.book-page {
+  position: absolute;
+  top: 0;
+  width: var(--page-width);
+  height: var(--page-height);
+  overflow: hidden;
+  background-color: var(--bg-navy);
+}
+
+/* Inside Left Page (Image 3) */
+.page-left {
+  left: 0;
+  border-radius: 4px 0 0 4px;
+  box-shadow: 
+    -10px 10px 30px rgba(0, 0, 0, 0.5),
+    inset -10px 0 25px rgba(0, 0, 0, 0.35);
+  z-index: 1;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+  cursor: pointer;
+}
+
+.book-container.open .page-left {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.book-container.animating .page-left {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
+}
+
+/* Inside Right Page (Image 4) */
+.page-right {
+  left: var(--page-width);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 
+    10px 10px 30px rgba(0, 0, 0, 0.5),
+    inset 10px 0 25px rgba(0, 0, 0, 0.35);
+  z-index: 1;
+}
+
+.page-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+/* Inside Center Spine Crease */
+.page-crease {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.crease-left {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%);
+}
+
+.crease-right {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%);
+}
+
+/* Dynamic Page Shading Overlays */
+.page-overlay, .face-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity var(--book-anim-dur) ease;
+}
+
+#leftOverlay {
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+}
+
+.book-container.open #leftOverlay {
+  opacity: 0;
+}
+
+#rightOverlay {
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0.8;
+}
+
+.book-container.open #rightOverlay {
+  opacity: 0;
+}
+
+/* Center Spine Visual Line */
+.book-spine-line {
+  position: absolute;
+  top: 0;
+  left: calc(var(--page-width) - 1.5px);
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(15, 23, 42, 0.9) 50%, rgba(0, 0, 0, 0.8) 100%);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  z-index: 15;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Turning Leaf (Front Cover that turns)
+   ========================================================================== */
+
+.turning-leaf {
+  position: absolute;
+  top: 0;
+  left: var(--page-width);
+  width: var(--page-width);
+  height: var(--page-height);
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform var(--book-anim-dur) var(--book-anim-ease);
+  z-index: 10;
+  cursor: pointer;
+}
+
+/* Closed state: Leaf rests on right page */
+.book-container.closed .turning-leaf {
+  transform: rotateY(0deg);
+}
+
+/* Open state: Leaf flips over to left page */
+.book-container.open .turning-leaf {
+  transform: rotateY(-180deg);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Leaf Faces */
+.leaf-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+/* Front Face: Image 2 (Closed Book Cover) */
+.leaf-front {
+  transform: rotateY(0deg);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 
+    12px 12px 35px rgba(0, 0, 0, 0.7),
+    0 0 25px rgba(212, 175, 55, 0.15);
+}
+
+/* Closed book spine shadow (left side of closed book) */
+.spine-shade-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 18px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.15) 70%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Closed Book Tap Prompt */
+.tap-open-prompt {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 16, 32, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: var(--gold-light);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  animation: pulsePrompt 2s ease-in-out infinite;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.prompt-icon {
+  color: var(--gold-accent);
+  font-size: 0.9rem;
+}
+
+@keyframes pulsePrompt {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.04);
+    box-shadow: 0 4px 22px rgba(212, 175, 55, 0.3);
+  }
+}
+
+/* Hide prompt once book is opened */
+.book-container.open .tap-open-prompt {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Back Face: Inside Left Page */
+.leaf-back {
+  transform: rotateY(180deg);
+  border-radius: 4px 0 0 4px;
+  box-shadow: 
+    -10px 10px 30px rgba(0, 0, 0, 0.5),
+    inset -10px 0 25px rgba(0, 0, 0, 0.35);
+}
+
+/* Dynamic Leaf Shading */
+#frontOverlay {
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+}
+
+.book-container.animating #frontOverlay {
+  opacity: 0.5;
+}
+
+#backOverlay {
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0.5;
+}
+
+.book-container.open #backOverlay {
+  opacity: 0;
+}
+
+/* ==========================================================================
+   QR Code Hotspots (Image 4 / Right Page)
+   ========================================================================== */
+
+.qr-hitbox {
+  position: absolute;
+  display: block;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 25;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  pointer-events: auto;
+}
+
+/* Church Hotspot: Encompasses Church QR Code and Text */
+.qr-church {
+  left: 9%;
+  top: 26%;
+  width: 36%;
+  height: 24%;
+}
+
+/* Reception Hotspot: Encompasses Reception QR Code and Text */
+.qr-reception {
+  left: 9%;
+  top: 56%;
+  width: 36%;
+  height: 24%;
+}
+
+/* Subtle Interactive Glow Ring to Indicate Clickability */
+.qr-glow-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  border: 1px dashed rgba(212, 175, 55, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease, border-color 0.3s ease;
+  pointer-events: none;
+}
+
+.qr-hitbox:hover .qr-glow-ring,
+.qr-hitbox:focus .qr-glow-ring {
+  opacity: 1;
+  border-color: rgba(212, 175, 55, 0.85);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.qr-hitbox:active {
+  transform: scale(0.98);
+}
+
+/* Disable hotspot clicks during book opening animation or when closed */
+.book-container.closed .qr-hitbox,
+.book-container.animating .qr-hitbox {
+  pointer-events: none !important;
+}
+
+/* ==========================================================================
+   Responsive Adaptations for Small / Compact Viewports
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .step-book {
+    padding: 8px 6px 6px;
+  }
+
+  .book-nav {
+    min-height: 32px;
+    margin-bottom: 4px;
+  }
+
+  .interaction-hint {
+    font-size: 0.74rem;
+    padding: 6px 14px;
+    bottom: 12px;
+  }
+
+  .tap-open-prompt {
+    font-size: 0.74rem;
+    padding: 6px 14px;
+    bottom: 16px;
+  }
+
+  .nav-btn {
+    padding: 5px 11px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-height: 500px) {
+  .step-book {
+    padding: 4px 6px;
+  }
+
+  .book-nav {
+    min-height: 28px;
+    margin-bottom: 2px;
+  }
+
+  .nav-btn {
+    padding: 4px 10px;
+    font-size: 0.70rem;
+  }
+
+  .interaction-hint {
+    bottom: 8px;
+    padding: 4px 12px;
+    font-size: 0.70rem;
+  }
+
+  .tap-open-prompt {
+    bottom: 10px;
+    padding: 4px 12px;
+    font-size: 0.70rem;
+  }
+}
