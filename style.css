@@ -131,13 +131,13 @@ html, body {
    ========================================================================== */
 
 .step-cover {
-  cursor: grab;
+  cursor: pointer;
   padding: 12px;
   touch-action: pan-y;
 }
 
 .step-cover:active {
-  cursor: grabbing;
+  cursor: pointer;
 }
 
 .card-container {
@@ -329,22 +329,24 @@ html, body {
   height: var(--book-height);
   transform-style: preserve-3d;
   transform-origin: 50% 50%;
-  background-color: var(--bg-navy);
-  border-radius: 4px;
-  box-shadow: 
-    0 16px 40px rgba(0, 0, 0, 0.65),
-    0 2px 10px rgba(0, 0, 0, 0.4);
+  background: transparent;
   transition: transform var(--book-anim-dur) var(--book-anim-ease);
 }
 
-/* When FOLDED (Step 2): Center stays at 50% 50%, 1:1 physical card dimension */
+/* When FOLDED (Step 2): Container background is transparent so ONLY the centered folded card (50% width) is visible */
 .tri-fold-container.folded {
   transform: scale(1);
+  background: transparent;
 }
 
 /* When UNFOLDED (Step 3): Full 3-panel spread at 100% width */
 .tri-fold-container.unfolded {
   transform: scale(1);
+  background-color: var(--bg-navy);
+  border-radius: 4px;
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.65),
+    0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================================================
@@ -377,6 +379,7 @@ html, body {
   overflow: hidden;
   background-color: var(--bg-navy);
   z-index: 2;
+  transform: translateZ(0);
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.25);
 }
 
@@ -450,7 +453,7 @@ html, body {
 }
 
 .tri-fold-container.folded .flap-left {
-  transform: rotateY(-180deg) translateZ(1px);
+  transform: rotateY(-180deg) translateZ(-3px);
 }
 
 .tri-fold-container.unfolded .flap-left {
@@ -466,7 +469,7 @@ html, body {
 }
 
 .tri-fold-container.folded .flap-right {
-  transform: rotateY(180deg) translateZ(1px);
+  transform: rotateY(180deg) translateZ(-3px);
 }
 
 .tri-fold-container.unfolded .flap-right {
@@ -485,11 +488,23 @@ html, body {
   overflow: hidden;
 }
 
-/* Inner Face (visible when unfolded) */
+/* Inner Face (visible when unfolded, strictly hidden when folded to prevent bleed) */
 .flap-face-inner {
   transform: rotateY(0deg);
   background-color: var(--bg-navy);
   overflow: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.tri-fold-container.folded .flap-face-inner {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.tri-fold-container.unfolded .flap-face-inner {
+  visibility: visible;
+  opacity: 1;
 }
 
 .flap-left .flap-face-inner {
@@ -548,27 +563,43 @@ html, body {
   pointer-events: none;
 }
 
-/* Outer Face: Completely Blank Closed Invitation (visible when folded) */
+/* Outer Face: Original Step 2 Closed Invitation Card (from closed_book.jpg) */
 .flap-face-outer {
   transform: rotateY(180deg);
-  background: linear-gradient(145deg, #0b172e 0%, #081225 50%, #060e1c 100%);
+  background-color: var(--bg-navy);
   overflow: hidden;
 }
 
-.blank-surface {
+.closed-cover-img {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.04) 0%, transparent 75%);
+  top: 0;
+  height: 100%;
+  width: 200%;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
+}
+
+.closed-img-left {
+  left: 0;
+}
+
+.closed-img-right {
+  left: -100%;
 }
 
 .flap-outer-left {
-  border-radius: 0 4px 4px 0;
-  box-shadow: -6px 6px 20px rgba(0, 0, 0, 0.55);
+  border-radius: 4px 0 0 4px;
+  box-shadow: 
+    -10px 12px 30px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(212, 175, 55, 0.12);
 }
 
 .flap-outer-right {
-  border-radius: 4px 0 0 4px;
-  box-shadow: 6px 6px 20px rgba(0, 0, 0, 0.55);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 
+    10px 12px 30px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(212, 175, 55, 0.12);
 }
 
 /* Subtle hairline shadow where flaps meet at center seam */
@@ -580,15 +611,58 @@ html, body {
 }
 
 .seam-shadow-left {
-  left: 0;
-  width: 4px;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
+  right: 0;
+  width: 3px;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
 }
 
 .seam-shadow-right {
-  right: 0;
-  width: 4px;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
+  left: 0;
+  width: 3px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
+}
+
+/* Dedicated Step 2 Closed Invitation Card (Image 2: closed_book.jpg) */
+.folded-card-cover {
+  position: absolute;
+  top: 0;
+  left: 25%;
+  width: 50%;
+  height: 100%;
+  z-index: 35;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.7),
+    0 2px 10px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.folded-card-cover .folded-card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
+}
+
+.tri-fold-container.unfolded .folded-card-cover {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.tri-fold-container.folded .folded-card-cover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 /* Folded Prompt (subtle prompt centered on the folded blank card) */

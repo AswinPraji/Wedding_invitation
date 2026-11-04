@@ -127,7 +127,7 @@ function initInvitationApp() {
   // - Ignores vertical drags to prevent accidental navigation during scroll
   // =========================================================================
 
-  function enableHorizontalGestures(element, { onSwipeLeft, onSwipeRight }) {
+  function enableHorizontalGestures(element, { onSwipeLeft, onSwipeRight, onTap }) {
     let startX = 0;
     let startY = 0;
     let startTime = 0;
@@ -163,8 +163,8 @@ function initInvitationApp() {
       const absY = Math.abs(diffY);
       const elapsed = Date.now() - startTime;
 
-      // Require at least 35px horizontal travel AND horizontal dominance over vertical
-      if (absX >= 35 && absX > absY * 1.25 && elapsed < 1000) {
+      // Swipe: horizontal movement >= 20px and dominant over vertical
+      if (absX >= 20 && absX > absY && elapsed < 1200) {
         justSwiped = true;
         setTimeout(() => { justSwiped = false; }, 300);
 
@@ -172,6 +172,11 @@ function initInvitationApp() {
           onSwipeLeft();
         } else if (diffX > 0 && typeof onSwipeRight === 'function') {
           onSwipeRight();
+        }
+      } else if (absX < 15 && absY < 15 && elapsed < 700) {
+        // Tap / Click via pointer
+        if (typeof onTap === 'function') {
+          onTap(e);
         }
       }
     }, { passive: true });
@@ -181,9 +186,12 @@ function initInvitationApp() {
     }, { passive: true });
   }
 
-  // Step 1 Cover Gestures: Swipe left to go to Step 2
+  // Step 1 Cover Gestures: Swipe left or Tap to go to Step 2
   enableHorizontalGestures(stepCover, {
     onSwipeLeft: () => {
+      if (currentStep === 1) goToStep2();
+    },
+    onTap: () => {
       if (currentStep === 1) goToStep2();
     }
   });
@@ -199,16 +207,25 @@ function initInvitationApp() {
       } else if (currentStep === 2) {
         goToStep1();
       }
+    },
+    onTap: (e) => {
+      if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) return;
+      if (currentStep === 2) {
+        unfoldInvitation();
+      } else if (currentStep === 3 && e.target.closest('.panel-center')) {
+        foldInvitation();
+      }
     }
   });
 
   // =========================================================================
-  // CLICK & TAP HANDLERS
+  // CLICK & TAP HANDLERS (Direct click event backup)
   // =========================================================================
 
-  // Step 1: Click or tap cover to advance to Step 2
-  coverCard.addEventListener('click', () => {
-    if (justSwiped) return;
+  // Step 1: Click or tap anywhere on Step 1 to advance to Step 2
+  stepCover.addEventListener('click', (e) => {
+    if (justSwiped || isAnimating) return;
+    if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) return;
     if (currentStep === 1) {
       goToStep2();
     }
@@ -223,6 +240,18 @@ function initInvitationApp() {
       unfoldInvitation();
     }
   });
+
+  const foldedCardCover = document.getElementById('foldedCardCover');
+  if (foldedCardCover) {
+    foldedCardCover.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (currentStep === 2) {
+          unfoldInvitation();
+        }
+      }
+    });
+  }
 
   // Step 3: Tap center panel to fold invitation
   if (panelCenter) {

@@ -79,9 +79,9 @@
               </a>
             </div>
 
-            <!-- Outer face: completely blank folded left flap -->
+            <!-- Outer face: original closed invitation card (left half of closed_book.jpg) -->
             <div class="flap-face flap-face-outer blank-flap flap-outer-left">
-              <div class="blank-surface"></div>
+              <img src="assets/closed_book.jpg" alt="Closed Wedding Invitation" class="closed-cover-img closed-img-left" draggable="false">
               <div class="seam-shadow seam-shadow-left"></div>
             </div>
           </div>
@@ -93,17 +93,20 @@
               <img src="assets/panel_right.jpg" alt="Wedding Calendar and Quote" class="panel-image" draggable="false">
             </div>
 
-            <!-- Outer face: completely blank folded right flap -->
+            <!-- Outer face: original closed invitation card (right half of closed_book.jpg) -->
             <div class="flap-face flap-face-outer blank-flap flap-outer-right">
-              <div class="blank-surface"></div>
+              <img src="assets/closed_book.jpg" alt="Closed Wedding Invitation" class="closed-cover-img closed-img-right" draggable="false">
               <div class="seam-shadow seam-shadow-right"></div>
             </div>
           </div>
 
-          <!-- Folded Prompt (subtle prompt centered on the blank card) -->
-          <div class="folded-prompt" id="foldedPrompt">
-            <span class="prompt-icon">✧</span>
-            <span class="prompt-text">Swipe or tap to open</span>
+          <!-- STEP 2 DEDICATED CLOSED CARD: Shows Image 2 (closed_book.jpg) cleanly and completely -->
+          <div class="folded-card-cover" id="foldedCardCover" role="button" tabindex="0" aria-label="Closed Wedding Invitation. Swipe or tap to open.">
+            <img src="assets/closed_book.jpg" alt="Closed Wedding Invitation" class="folded-card-image" draggable="false">
+            <div class="folded-prompt" id="foldedPrompt">
+              <span class="prompt-icon">✧</span>
+              <span class="prompt-text">Swipe or tap to open</span>
+            </div>
           </div>
 
         </div>
