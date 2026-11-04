@@ -307,7 +307,7 @@ html, body {
   align-items: center;
   justify-content: center;
   position: relative;
-  perspective: 2500px;
+  perspective: 1200px;
   overflow: visible;
 }
 
@@ -445,7 +445,8 @@ html, body {
 /* Left Flap: Hinges on its RIGHT edge (connecting to center panel at x = 25%) */
 .flap-left {
   left: 0;
-  transform-origin: right center;
+  transform-origin: 100% 50%;
+  filter: drop-shadow(-4px 8px 16px rgba(0, 0, 0, 0.45));
 }
 
 .tri-fold-container.folded .flap-left {
@@ -460,7 +461,8 @@ html, body {
 /* Right Flap: Hinges on its LEFT edge (connecting to center panel at x = 75%) */
 .flap-right {
   left: 75%;
-  transform-origin: left center;
+  transform-origin: 0% 50%;
+  filter: drop-shadow(4px 8px 16px rgba(0, 0, 0, 0.45));
 }
 
 .tri-fold-container.folded .flap-right {
@@ -494,6 +496,19 @@ html, body {
   border-radius: 4px 0 0 4px;
 }
 
+/* Subtle 3D hinge crease along left flap connection */
+.flap-left .flap-face-inner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 6;
+}
+
 .flap-left .flap-face-inner .panel-image {
   position: absolute;
   top: 0;
@@ -507,6 +522,19 @@ html, body {
 
 .flap-right .flap-face-inner {
   border-radius: 0 4px 4px 0;
+}
+
+/* Subtle 3D hinge crease along right flap connection */
+.flap-right .flap-face-inner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 6;
 }
 
 .flap-right .flap-face-inner .panel-image {
@@ -674,6 +702,10 @@ html, body {
    ========================================================================== */
 
 @media (max-width: 480px) {
+  .book-stage {
+    perspective: 900px;
+  }
+
   .step-book {
     padding: 8px 6px 6px;
   }
