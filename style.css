@@ -1,8 +1,11 @@
 /* ==========================================================================
    Wedding Invitation Stylesheet
    Follows exact aesthetic: Luxury Midnight Blue & Gold
-   Zero extra clutter; exact aspect ratio preservation (564:787)
-   Responsive fit to screen across mobile, tablet, laptop, and desktop.
+   Tri-fold / Gatefold layout:
+   - Left panel: 25% (QR Codes)
+   - Center panel: 50% (Celebration Details)
+   - Right panel: 25% (Calendar & Quote)
+   Responsive across mobile, tablet, laptop, and desktop.
    ========================================================================== */
 
 :root {
@@ -17,7 +20,7 @@
   --gold-light: #f3e5ab;
   --gold-glow: rgba(212, 175, 55, 0.35);
 
-  /* Viewport available space fallbacks using dvh / vw */
+  /* Viewport available space fallbacks */
   --pad-x: 16px;
   --pad-y-book: 64px;
   --pad-y-cover: 36px;
@@ -26,18 +29,16 @@
   --avail-h-book: calc(100dvh - var(--pad-y-book));
   --avail-h-cover: calc(100dvh - var(--pad-y-cover));
 
-  /* Step 3 Open Book Spread Dimensions (Calculated for the ENTIRE book) */
+  /* Step 3 Unfolded 3-Panel Spread Dimensions */
   --book-height: min(var(--avail-h-book), calc(var(--avail-w) / var(--spread-ratio)));
   --book-width: calc(var(--book-height) * var(--spread-ratio));
-  --page-width: calc(var(--book-width) / 2);
-  --page-height: var(--book-height);
 
   /* Step 1 Cover Card Dimensions */
   --cover-height: min(var(--avail-h-cover), calc(var(--avail-w) / var(--single-ratio)));
   --cover-width: calc(var(--cover-height) * var(--single-ratio));
 
-  /* Step 2 Closed Book Scale (dynamic in JS, default 1) */
-  --closed-scale: 1;
+  /* Step 2 Folded Scale (dynamic in JS, capped for perfect margins) */
+  --closed-scale: 1.35;
 
   --book-anim-dur: 1.25s;
   --book-anim-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -153,8 +154,6 @@ html, body {
   position: relative;
   width: var(--cover-width);
   height: var(--cover-height);
-  max-width: 96vw;
-  max-height: calc(100dvh - 24px);
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 
@@ -181,7 +180,7 @@ html, body {
   pointer-events: none;
 }
 
-/* Subtle Swipe / Tap Hint at Bottom */
+/* Subtle Swipe / Tap Hint at Bottom of Cover */
 .interaction-hint {
   position: absolute;
   bottom: 16px;
@@ -229,7 +228,7 @@ html, body {
 }
 
 /* ==========================================================================
-   STEP 2 & STEP 3: Book Navigation & Stage
+   STEP 2 & STEP 3: Folded & Unfolded Three-Panel Invitation
    ========================================================================== */
 
 .step-book {
@@ -282,7 +281,7 @@ html, body {
   transform: translateY(-1px);
 }
 
-/* Hide close button when book is closed */
+/* Hide fold/close button when invitation is already folded */
 .book-nav .close-btn {
   opacity: 0;
   visibility: hidden;
@@ -296,7 +295,7 @@ html, body {
   pointer-events: auto;
 }
 
-/* 3D Book Stage (Fills remaining height below nav) */
+/* 3D Gatefold Stage */
 .book-stage {
   flex: 1;
   width: 100%;
@@ -309,172 +308,148 @@ html, body {
 }
 
 /* ==========================================================================
-   Book Container & 3D Geometry
+   Tri-Fold Container & 3D Geometry
+   Unfolded layout:
+   - Left panel: 25%
+   - Center panel: 50%
+   - Right panel: 25%
+   Folded layout:
+   - Flaps fold inward by 180deg over the center panel
+   - Completely blank exterior meets seamlessly at 50%
+   - Symmetric center at 50% 50%
    ========================================================================== */
 
-.book-container {
+.tri-fold-container {
   position: relative;
   width: var(--book-width);
   height: var(--book-height);
   transform-style: preserve-3d;
+  transform-origin: 50% 50%;
   transition: transform var(--book-anim-dur) var(--book-anim-ease);
 }
 
-/* When CLOSED (Step 2): Shifted to center right cover, scaled symmetrically */
-.book-container.closed {
-  transform: translateX(calc(-25% * var(--closed-scale, 1))) scale(var(--closed-scale, 1));
+/* When FOLDED (Step 2): Center stays at 50% 50%, smoothly scaled on mobile portrait */
+.tri-fold-container.folded {
+  transform: scale(var(--closed-scale, 1));
 }
 
-/* When OPEN (Step 3): Container is centered; both pages visible side by side */
-.book-container.open {
-  transform: translateX(0) scale(1);
+/* When UNFOLDED (Step 3): Full 3-panel spread at 100% width */
+.tri-fold-container.unfolded {
+  transform: scale(1);
 }
 
-/* Base Pages */
-.book-page {
+/* ==========================================================================
+   Panels
+   ========================================================================== */
+
+.panel {
   position: absolute;
   top: 0;
-  width: 50%;
   height: 100%;
   overflow: hidden;
   background-color: var(--bg-navy);
 }
 
-/* Inside Left Page (Image 3) */
-.page-left {
-  left: 0;
-  border-radius: 4px 0 0 4px;
-  box-shadow: 
-    -10px 10px 30px rgba(0, 0, 0, 0.5),
-    inset -10px 0 25px rgba(0, 0, 0, 0.35);
-  z-index: 1;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.5s ease, visibility 0.5s ease;
-  cursor: pointer;
-}
-
-.book-container.open .page-left {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-
-.book-container.animating .page-left {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: none;
-}
-
-/* Inside Right Page (Image 4) */
-.page-right {
-  left: 50%;
-  border-radius: 0 4px 4px 0;
-  box-shadow: 
-    10px 10px 30px rgba(0, 0, 0, 0.5),
-    inset 10px 0 25px rgba(0, 0, 0, 0.35);
-  z-index: 1;
-}
-
-.page-image {
+.panel-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: fill;
   display: block;
   pointer-events: none;
 }
 
-/* Inside Center Spine Crease */
-.page-crease {
+/* Center Main Panel (50% width, stationary base) */
+.panel-center {
+  left: 25%;
+  width: 50%;
+  z-index: 2;
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.7),
+    inset 0 0 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Left & Right Fold Creases on Center Panel */
+.fold-shadow {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 28px;
+  width: 24px;
   pointer-events: none;
   z-index: 5;
 }
 
-.crease-left {
-  right: 0;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%);
-}
-
-.crease-right {
+.fold-shadow-left {
   left: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.12) 70%, transparent 100%);
 }
 
-/* Dynamic Page Shading Overlays */
-.page-overlay, .face-overlay {
+.fold-shadow-right {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.12) 70%, transparent 100%);
+}
+
+/* Center Shade Overlay (fades out as flaps open) */
+.center-shade-overlay {
   position: absolute;
   inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 1;
   pointer-events: none;
   transition: opacity var(--book-anim-dur) ease;
+  z-index: 6;
 }
 
-#leftOverlay {
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 1;
-}
-
-.book-container.open #leftOverlay {
+.tri-fold-container.unfolded .center-shade-overlay {
   opacity: 0;
-}
-
-#rightOverlay {
-  background: rgba(0, 0, 0, 0.4);
-  opacity: 0.8;
-}
-
-.book-container.open #rightOverlay {
-  opacity: 0;
-}
-
-/* Center Spine Visual Line */
-.book-spine-line {
-  position: absolute;
-  top: 0;
-  left: calc(50% - 1.5px);
-  width: 3px;
-  height: 100%;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(15, 23, 42, 0.9) 50%, rgba(0, 0, 0, 0.8) 100%);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
-  z-index: 15;
-  pointer-events: none;
 }
 
 /* ==========================================================================
-   Turning Leaf (Front Cover that turns)
+   Flaps (Left & Right 25% Panels that fold)
    ========================================================================== */
 
-.turning-leaf {
+.panel-flap {
   position: absolute;
   top: 0;
-  left: 50%;
-  width: 50%;
+  width: 25%;
   height: 100%;
-  transform-origin: left center;
   transform-style: preserve-3d;
   transition: transform var(--book-anim-dur) var(--book-anim-ease);
   z-index: 10;
   cursor: pointer;
 }
 
-/* Closed state: Leaf rests on right page */
-.book-container.closed .turning-leaf {
-  transform: rotateY(0deg);
+/* Left Flap: Hinges on its RIGHT edge (connecting to center panel at x = 25%) */
+.flap-left {
+  left: 0;
+  transform-origin: right center;
 }
 
-/* Open state: Leaf flips over to left page */
-.book-container.open .turning-leaf {
+.tri-fold-container.folded .flap-left {
   transform: rotateY(-180deg);
-  cursor: default;
-  pointer-events: none;
 }
 
-/* Leaf Faces */
-.leaf-face {
+.tri-fold-container.unfolded .flap-left {
+  transform: rotateY(0deg);
+  cursor: default;
+}
+
+/* Right Flap: Hinges on its LEFT edge (connecting to center panel at x = 75%) */
+.flap-right {
+  left: 75%;
+  transform-origin: left center;
+}
+
+.tri-fold-container.folded .flap-right {
+  transform: rotateY(180deg);
+}
+
+.tri-fold-container.unfolded .flap-right {
+  transform: rotateY(0deg);
+  cursor: default;
+}
+
+/* Flap Faces (3D Dual-sided) */
+.flap-face {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -484,28 +459,72 @@ html, body {
   overflow: hidden;
 }
 
-/* Front Face: Image 2 (Closed Book Cover) */
-.leaf-front {
+/* Inner Face (visible when unfolded) */
+.flap-face-inner {
   transform: rotateY(0deg);
-  border-radius: 0 4px 4px 0;
-  box-shadow: 
-    12px 12px 35px rgba(0, 0, 0, 0.7),
-    0 0 25px rgba(212, 175, 55, 0.15);
+  background-color: var(--bg-navy);
 }
 
-/* Closed book spine shadow (left side of closed book) */
-.spine-shade-edge {
+.flap-left .flap-face-inner {
+  border-radius: 4px 0 0 4px;
+  box-shadow: -10px 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.flap-right .flap-face-inner {
+  border-radius: 0 4px 4px 0;
+  box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Outer Face: Completely Blank Closed Invitation (visible when folded) */
+.flap-face-outer {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, #091224 0%, #0d1a33 50%, #070e1c 100%);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+}
+
+.blank-surface {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.04) 0%, transparent 80%);
+}
+
+.flap-outer-left {
+  border-radius: 4px 0 0 4px;
+  border-right: none;
+  box-shadow: 
+    -12px 12px 35px rgba(0, 0, 0, 0.7),
+    inset -4px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.flap-outer-right {
+  border-radius: 0 4px 4px 0;
+  border-left: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 
+    12px 12px 35px rgba(0, 0, 0, 0.7),
+    inset 4px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Seam shadow where both blank flaps meet in the center when folded */
+.seam-shadow {
   position: absolute;
   top: 0;
-  left: 0;
   bottom: 0;
-  width: 18px;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.15) 70%, transparent 100%);
+  width: 12px;
   pointer-events: none;
 }
 
-/* Closed Book Tap Prompt */
-.tap-open-prompt {
+.seam-shadow-left {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+}
+
+.seam-shadow-right {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+}
+
+/* Folded Prompt (subtle prompt centered on the folded blank card) */
+.folded-prompt {
   position: absolute;
   bottom: 24px;
   left: 50%;
@@ -513,7 +532,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(8, 16, 32, 0.85);
+  background: rgba(8, 16, 32, 0.88);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   padding: 8px 18px;
@@ -524,9 +543,11 @@ html, body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   pointer-events: none;
-  animation: pulsePrompt 2s ease-in-out infinite;
+  z-index: 30;
+  animation: pulsePrompt 2.2s ease-in-out infinite;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   white-space: nowrap;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 
 .prompt-icon {
@@ -545,42 +566,13 @@ html, body {
   }
 }
 
-/* Hide prompt once book is opened */
-.book-container.open .tap-open-prompt {
+.tri-fold-container.unfolded .folded-prompt {
   opacity: 0;
   visibility: hidden;
 }
 
-/* Back Face: Inside Left Page */
-.leaf-back {
-  transform: rotateY(180deg);
-  border-radius: 4px 0 0 4px;
-  box-shadow: 
-    -10px 10px 30px rgba(0, 0, 0, 0.5),
-    inset -10px 0 25px rgba(0, 0, 0, 0.35);
-}
-
-/* Dynamic Leaf Shading */
-#frontOverlay {
-  background: rgba(0, 0, 0, 0.45);
-  opacity: 0;
-}
-
-.book-container.animating #frontOverlay {
-  opacity: 0.5;
-}
-
-#backOverlay {
-  background: rgba(0, 0, 0, 0.45);
-  opacity: 0.5;
-}
-
-.book-container.open #backOverlay {
-  opacity: 0;
-}
-
 /* ==========================================================================
-   QR Code Hotspots (Image 4 / Right Page)
+   QR Code Hotspots (Left Panel)
    ========================================================================== */
 
 .qr-hitbox {
@@ -593,20 +585,20 @@ html, body {
   pointer-events: auto;
 }
 
-/* Church Hotspot: Encompasses Church QR Code and Text */
+/* Church Hotspot: Encompasses Church QR Code and Text on Left Panel */
 .qr-church {
-  left: 9%;
-  top: 26%;
-  width: 36%;
-  height: 24%;
+  left: 8%;
+  top: 27%;
+  width: 84%;
+  height: 26%;
 }
 
-/* Reception Hotspot: Encompasses Reception QR Code and Text */
+/* Reception Hotspot: Encompasses Reception QR Code and Text on Left Panel */
 .qr-reception {
-  left: 9%;
-  top: 56%;
-  width: 36%;
-  height: 24%;
+  left: 8%;
+  top: 58%;
+  width: 84%;
+  height: 26%;
 }
 
 /* Subtle Interactive Glow Ring to Indicate Clickability */
@@ -631,9 +623,9 @@ html, body {
   transform: scale(0.98);
 }
 
-/* Disable hotspot clicks during book opening animation or when closed */
-.book-container.closed .qr-hitbox,
-.book-container.animating .qr-hitbox {
+/* Disable hotspot clicks during folding animation or when folded */
+.tri-fold-container.folded .qr-hitbox,
+.tri-fold-container.animating .qr-hitbox {
   pointer-events: none !important;
 }
 
@@ -657,7 +649,7 @@ html, body {
     bottom: 12px;
   }
 
-  .tap-open-prompt {
+  .folded-prompt {
     font-size: 0.74rem;
     padding: 6px 14px;
     bottom: 16px;
@@ -690,7 +682,7 @@ html, body {
     font-size: 0.70rem;
   }
 
-  .tap-open-prompt {
+  .folded-prompt {
     bottom: 10px;
     padding: 4px 12px;
     font-size: 0.70rem;

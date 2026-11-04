@@ -2,8 +2,9 @@
  * Wedding Invitation Interactive Controller
  * Follows exact flow:
  * Step 1: Initial Cover Card -> Swipe left / drag / tap to go to Step 2
- * Step 2: Closed Book -> Tap / drag left to open realistic 3D book (drag right to go back to cover)
- * Step 3: Open Book Spread (Left & Right pages) with clickable QR locations -> Close book returns to Step 2
+ * Step 2: Blank Folded Invitation -> Tap / swipe left to unfold 3-panel invitation (swipe right to go back to cover)
+ * Step 3: Unfolded 3-Panel Spread (Left: QR codes 25%, Center: Details 50%, Right: Calendar 25%)
+ *         Fold button or swipe right returns to Step 2
  */
 
 function initInvitationApp() {
@@ -12,15 +13,17 @@ function initInvitationApp() {
   const stepBook = document.getElementById('stepBook');
   const coverCard = document.getElementById('coverCard');
   const bookContainer = document.getElementById('bookContainer');
-  const turningLeaf = document.getElementById('turningLeaf');
+  const panelCenter = document.getElementById('panelCenter');
+  const flapLeft = document.getElementById('flapLeft');
+  const flapRight = document.getElementById('flapRight');
+  const foldedPrompt = document.getElementById('foldedPrompt');
   const btnBackToCover = document.getElementById('btnBackToCover');
   const btnCloseBook = document.getElementById('btnCloseBook');
-  const pageLeft = document.getElementById('pageLeft');
   const qrChurch = document.getElementById('qrChurch');
   const qrReception = document.getElementById('qrReception');
 
   // Navigation State
-  let currentStep = 1; // 1 = Cover, 2 = Closed Book, 3 = Open Book
+  let currentStep = 1; // 1 = Cover, 2 = Folded Invitation, 3 = Unfolded 3-Panel Spread
   let isAnimating = false;
   let animTimer = null;
   let justSwiped = false;
@@ -40,7 +43,7 @@ function initInvitationApp() {
   // STEP TRANSITIONS
   // =========================================================================
 
-  // STEP 1 -> STEP 2: Transition from Cover to Closed Book
+  // STEP 1 -> STEP 2: Transition from Cover to Folded Invitation
   function goToStep2() {
     if (currentStep !== 1 || isAnimating) return;
 
@@ -49,9 +52,9 @@ function initInvitationApp() {
     setAnimating(450, () => {
       stepCover.classList.remove('active', 'slide-out');
 
-      // Ensure book starts in closed state
-      bookContainer.classList.remove('open', 'animating');
-      bookContainer.classList.add('closed');
+      // Ensure invitation starts in folded state
+      bookContainer.classList.remove('unfolded', 'animating');
+      bookContainer.classList.add('folded');
       stepBook.classList.remove('book-is-open');
 
       // Activate Step 2
@@ -75,8 +78,8 @@ function initInvitationApp() {
     });
   }
 
-  // STEP 2 -> STEP 3: Book Opening Animation
-  function openBook() {
+  // STEP 2 -> STEP 3: Unfold Three-Panel Invitation Animation
+  function unfoldInvitation() {
     if (currentStep !== 2 || isAnimating) return;
 
     if (navigator.vibrate) {
@@ -84,8 +87,8 @@ function initInvitationApp() {
     }
 
     bookContainer.classList.add('animating');
-    bookContainer.classList.remove('closed');
-    bookContainer.classList.add('open');
+    bookContainer.classList.remove('folded');
+    bookContainer.classList.add('unfolded');
     stepBook.classList.add('book-is-open');
 
     setAnimating(1250, () => {
@@ -94,8 +97,8 @@ function initInvitationApp() {
     });
   }
 
-  // STEP 3 -> STEP 2: Book Closing Animation
-  function closeBook(onFinished) {
+  // STEP 3 -> STEP 2: Fold Three-Panel Invitation Animation
+  function foldInvitation(onFinished) {
     if (currentStep !== 3 || isAnimating) return;
 
     if (navigator.vibrate) {
@@ -103,8 +106,8 @@ function initInvitationApp() {
     }
 
     bookContainer.classList.add('animating');
-    bookContainer.classList.remove('open');
-    bookContainer.classList.add('closed');
+    bookContainer.classList.remove('unfolded');
+    bookContainer.classList.add('folded');
     stepBook.classList.remove('book-is-open');
 
     setAnimating(1250, () => {
@@ -120,7 +123,7 @@ function initInvitationApp() {
   // GESTURE & SWIPE CONTROLLER (Touch & Mouse unified)
   // Supports:
   // - Tap / click to advance
-  // - Horizontal swipe / drag (left: next, right: back)
+  // - Horizontal swipe / drag (left: next/unfold, right: back/fold)
   // - Ignores vertical drags to prevent accidental navigation during scroll
   // =========================================================================
 
@@ -146,7 +149,7 @@ function initInvitationApp() {
       isTracking = true;
     }, { passive: true });
 
-    element.addEventListener('pointermove', (e) => {
+    element.addEventListener('pointermove', () => {
       if (!isTracking) return;
     }, { passive: true });
 
@@ -188,11 +191,11 @@ function initInvitationApp() {
   // Step 2 & 3 Book Gestures
   enableHorizontalGestures(stepBook, {
     onSwipeLeft: () => {
-      if (currentStep === 2) openBook();
+      if (currentStep === 2) unfoldInvitation();
     },
     onSwipeRight: () => {
       if (currentStep === 3) {
-        closeBook();
+        foldInvitation();
       } else if (currentStep === 2) {
         goToStep1();
       }
@@ -204,38 +207,38 @@ function initInvitationApp() {
   // =========================================================================
 
   // Step 1: Click or tap cover to advance to Step 2
-  coverCard.addEventListener('click', (e) => {
+  coverCard.addEventListener('click', () => {
     if (justSwiped) return;
     if (currentStep === 1) {
       goToStep2();
     }
   });
 
-  // Step 2: Click or tap closed book / turning leaf to open
-  turningLeaf.addEventListener('click', (e) => {
-    if (justSwiped) return;
+  // Step 2: Click or tap closed folded invitation to unfold
+  bookContainer.addEventListener('click', (e) => {
+    if (justSwiped || isAnimating) return;
+    if (e.target.closest('.qr-hitbox') || e.target.closest('.nav-btn')) return;
+
     if (currentStep === 2) {
-      e.stopPropagation();
-      openBook();
+      unfoldInvitation();
     }
   });
 
-  // Step 3: Tap left page to close book
-  if (pageLeft) {
-    pageLeft.addEventListener('click', (e) => {
-      if (justSwiped) return;
-      if (currentStep === 3 && !isAnimating) {
-        e.stopPropagation();
-        closeBook();
+  // Step 3: Tap center panel to fold invitation
+  if (panelCenter) {
+    panelCenter.addEventListener('click', () => {
+      if (justSwiped || isAnimating) return;
+      if (currentStep === 3) {
+        foldInvitation();
       }
     });
   }
 
-  // Top Nav: Close Book Button
+  // Top Nav: Close / Fold Button
   btnCloseBook.addEventListener('click', (e) => {
     e.stopPropagation();
     if (currentStep === 3) {
-      closeBook();
+      foldInvitation();
     }
   });
 
@@ -243,7 +246,7 @@ function initInvitationApp() {
   btnBackToCover.addEventListener('click', (e) => {
     e.stopPropagation();
     if (currentStep === 3) {
-      closeBook(() => {
+      foldInvitation(() => {
         goToStep1();
       });
     } else if (currentStep === 2) {
@@ -259,24 +262,27 @@ function initInvitationApp() {
       if (currentStep === 1) {
         goToStep2();
       } else if (currentStep === 2) {
-        openBook();
+        unfoldInvitation();
       }
     } else if (e.key === 'ArrowLeft' || e.key === 'Escape') {
       if (currentStep === 3) {
-        closeBook();
+        foldInvitation();
       } else if (currentStep === 2) {
         goToStep1();
       }
     }
   });
 
-  // QR Hotspots: allow default navigation (opens in new tab)
+  // QR Hotspots: allow default navigation (opens in new tab) and stop propagation
   [qrChurch, qrReception].forEach(hotspot => {
     if (hotspot) {
+      hotspot.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+      });
       hotspot.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (currentStep !== 3 || isAnimating) {
           e.preventDefault();
-          return false;
         }
       });
     }
@@ -286,8 +292,8 @@ function initInvitationApp() {
   // DYNAMIC RESPONSIVE LAYOUT CALCULATION
   // Ensures invitation fits screen across mobile, tablet, desktop, and orientations
   // =========================================================================
-  const SINGLE_RATIO = 564 / 787;      // ~0.7166455
-  const SPREAD_RATIO = 1128 / 787;     // ~1.433291
+  const SINGLE_RATIO = 564 / 787;      // ~0.7166455 (Cover and Folded card ratio)
+  const SPREAD_RATIO = 1128 / 787;     // ~1.433291 (Full 3-panel 25% + 50% + 25% spread ratio)
 
   function updateResponsiveLayout() {
     const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
@@ -306,25 +312,21 @@ function initInvitationApp() {
     const coverH = Math.min(availHCover, availW / SINGLE_RATIO);
     const coverW = coverH * SINGLE_RATIO;
 
-    // 2. Step 3: Open Book Spread (calculated for the ENTIRE two-page book)
+    // 2. Step 3: Unfolded 3-Panel Spread (Left 25% + Center 50% + Right 25%)
     const bookH = Math.min(availHBook, availW / SPREAD_RATIO);
     const bookW = bookH * SPREAD_RATIO;
-    const pageW = bookW / 2;
-    const pageH = bookH;
 
-    // 3. Step 2: Closed Book
+    // 3. Step 2: Folded Invitation (center 50% visible, ratio identical to SINGLE_RATIO)
     const closedH = Math.min(availHBook, availW / SINGLE_RATIO);
     let closedScale = bookH > 0 ? (closedH / bookH) : 1;
-    // Cap closed scale between 1.0 and 1.5 to maintain natural proportions and guaranteed fit
-    closedScale = Math.max(1, Math.min(closedScale, 1.5));
+    // Cap closed scale between 1.0 and 1.6 to maintain natural proportions and guaranteed fit
+    closedScale = Math.max(1, Math.min(closedScale, 1.6));
 
     const rootStyle = document.documentElement.style;
     rootStyle.setProperty('--cover-width', `${Math.round(coverW)}px`);
     rootStyle.setProperty('--cover-height', `${Math.round(coverH)}px`);
     rootStyle.setProperty('--book-width', `${Math.round(bookW)}px`);
     rootStyle.setProperty('--book-height', `${Math.round(bookH)}px`);
-    rootStyle.setProperty('--page-width', `${Math.round(pageW)}px`);
-    rootStyle.setProperty('--page-height', `${Math.round(pageH)}px`);
     rootStyle.setProperty('--closed-scale', closedScale.toFixed(4));
   }
 
