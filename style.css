@@ -193,20 +193,36 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(9, 18, 36, 0.82);
+  background: rgba(9, 18, 36, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding: 8px 18px;
   border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.5);
   color: var(--gold-light);
+  font-family: inherit;
   font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   animation: floatHint 2.4s ease-in-out infinite;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
   white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 15;
+  outline: none;
+}
+
+.interaction-hint:hover {
+  background: rgba(14, 28, 54, 0.95);
+  border-color: rgba(212, 175, 55, 0.8);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.25);
+}
+
+.interaction-hint:active {
+  transform: translateX(-50%) scale(0.96);
 }
 
 .hint-arrow {
@@ -228,7 +244,7 @@ html, body {
 .step-cover.slide-out {
   opacity: 0;
   transform: translateX(-40px) scale(0.96);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 /* ==========================================================================

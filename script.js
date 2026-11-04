@@ -12,6 +12,7 @@ function initInvitationApp() {
   const stepCover = document.getElementById('stepCover');
   const stepBook = document.getElementById('stepBook');
   const coverCard = document.getElementById('coverCard');
+  const btnOpenInvitation = document.getElementById('btnOpenInvitation');
   const bookContainer = document.getElementById('bookContainer');
   const panelCenter = document.getElementById('panelCenter');
   const flapLeft = document.getElementById('flapLeft');
@@ -49,7 +50,7 @@ function initInvitationApp() {
 
     stepCover.classList.add('slide-out');
 
-    setAnimating(450, () => {
+    setAnimating(350, () => {
       stepCover.classList.remove('active', 'slide-out');
 
       // Ensure invitation starts in folded state
@@ -222,13 +223,33 @@ function initInvitationApp() {
   // CLICK & TAP HANDLERS (Direct click event backup)
   // =========================================================================
 
-  // Step 1: Click or tap anywhere on Step 1 to advance to Step 2
-  stepCover.addEventListener('click', (e) => {
-    if (justSwiped || isAnimating) return;
-    if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) return;
-    if (currentStep === 1) {
+  function triggerCoverAdvance(e) {
+    if (e && e.cancelable && e.type === 'keydown') e.preventDefault();
+    if (currentStep === 1 && !isAnimating) {
       goToStep2();
     }
+  }
+
+  // Cover Button ("SWIPE LEFT OR TAP ->") click handler
+  if (btnOpenInvitation) {
+    btnOpenInvitation.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerCoverAdvance(e);
+    });
+  }
+
+  // Cover Card click handler
+  coverCard.addEventListener('click', triggerCoverAdvance);
+  coverCard.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') {
+      triggerCoverAdvance(e);
+    }
+  });
+
+  // Step 1: Click anywhere on cover stage
+  stepCover.addEventListener('click', (e) => {
+    if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) return;
+    triggerCoverAdvance(e);
   });
 
   // Step 2: Click or tap closed folded invitation to unfold
