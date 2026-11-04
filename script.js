@@ -22,6 +22,9 @@ function initInvitationApp() {
   const btnCloseBook = document.getElementById('btnCloseBook');
   const qrChurch = document.getElementById('qrChurch');
   const qrReception = document.getElementById('qrReception');
+   const foldedCardCover = document.getElementById('foldedCardCover');
+
+  
 
   // Navigation State
   let currentStep = 1; // 1 = Cover, 2 = Folded Invitation, 3 = Unfolded 3-Panel Spread
@@ -129,62 +132,103 @@ function initInvitationApp() {
   // =========================================================================
 
   function enableHorizontalGestures(element, { onSwipeLeft, onSwipeRight, onTap }) {
-    let startX = 0;
-    let startY = 0;
-    let startTime = 0;
-    let isTracking = false;
+    // 1. Direct Touch Events (100% reliable on mobile touch screens)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isTouchActive = false;
 
-    element.addEventListener('pointerdown', (e) => {
-      // Don't intercept clicks on navigation buttons or QR hotspots
-      if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) {
-        return;
+    element.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) return;
+      if (e.touches && e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        isTouchActive = true;
       }
-      // For mouse, only track left button
-      if (e.pointerType === 'mouse' && e.button !== 0) {
-        return;
-      }
-
-      startX = e.clientX;
-      startY = e.clientY;
-      startTime = Date.now();
-      isTracking = true;
     }, { passive: true });
 
-    element.addEventListener('pointermove', () => {
-      if (!isTracking) return;
-    }, { passive: true });
+    element.addEventListener('touchend', (e) => {
+      if (!isTouchActive) return;
+      isTouchActive = false;
+      if (!e.changedTouches || e.changedTouches.length === 0) return;
 
-    element.addEventListener('pointerup', (e) => {
-      if (!isTracking) return;
-      isTracking = false;
-
-      const diffX = e.clientX - startX;
-      const diffY = e.clientY - startY;
+      const diffX = e.changedTouches[0].clientX - touchStartX;
+      const diffY = e.changedTouches[0].clientY - touchStartY;
       const absX = Math.abs(diffX);
       const absY = Math.abs(diffY);
-      const elapsed = Date.now() - startTime;
+      const elapsed = Date.now() - touchStartTime;
 
-      // Swipe: horizontal movement >= 20px and dominant over vertical
-      if (absX >= 20 && absX > absY && elapsed < 1200) {
+      if (absX >= 25 && absX > absY && elapsed < 1200) {
         justSwiped = true;
-        setTimeout(() => { justSwiped = false; }, 300);
+        setTimeout(() => { justSwiped = false; }, 350);
 
         if (diffX < 0 && typeof onSwipeLeft === 'function') {
           onSwipeLeft();
         } else if (diffX > 0 && typeof onSwipeRight === 'function') {
           onSwipeRight();
         }
-      } else if (absX < 15 && absY < 15 && elapsed < 700) {
-        // Tap / Click via pointer
+      } else if (absX < 25 && absY < 25 && elapsed < 800) {
         if (typeof onTap === 'function') {
           onTap(e);
         }
       }
     }, { passive: true });
 
-    element.addEventListener('pointercancel', () => {
-      isTracking = false;
+    element.addEventListener('touchcancel', () => {
+      isTouchActive = false;
     }, { passive: true });
+
+    // 2. Pointer Events (Desktop Mouse and Stylus)
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let pointerStartTime = 0;
+    let isPointerActive = false;
+
+    element.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') return; // Handled by touch events above
+      if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) {
+        return;
+      }
+      if (e.pointerType === 'mouse' && e.button !== 0) {
+        return;
+      }
+
+      pointerStartX = e.clientX;
+      pointerStartY = e.clientY;
+      pointerStartTime = Date.now();
+      isPointerActive = true;
+    });
+
+    element.addEventListener('pointerup', (e) => {
+      if (!isPointerActive) return;
+      isPointerActive = false;
+
+      const diffX = e.clientX - pointerStartX;
+      const diffY = e.clientY - pointerStartY;
+      const absX = Math.abs(diffX);
+      const absY = Math.abs(diffY);
+      const elapsed = Date.now() - pointerStartTime;
+
+      if (absX >= 25 && absX > absY && elapsed < 1200) {
+        justSwiped = true;
+        setTimeout(() => { justSwiped = false; }, 350);
+
+        if (diffX < 0 && typeof onSwipeLeft === 'function') {
+          onSwipeLeft();
+        } else if (diffX > 0 && typeof onSwipeRight === 'function') {
+          onSwipeRight();
+        }
+      } else if (absX < 20 && absY < 20 && elapsed < 800) {
+        if (typeof onTap === 'function') {
+          onTap(e);
+        }
+      }
+    });
+
+    element.addEventListener('pointercancel', () => {
+      isPointerActive = false;
+    });
   }
 
   // Step 1 Cover Gestures: Swipe left or Tap to go to Step 2
@@ -230,16 +274,29 @@ function initInvitationApp() {
     }
   }
 
-  // Cover Button ("SWIPE LEFT OR TAP ->") click handler
+  // Cover Button ("SWIPE LEFT OR TAP ->") handlers
   if (btnOpenInvitation) {
+    btnOpenInvitation.addEventListener('touchend', (e) => {
+      e.stopPropagation();
+      triggerCoverAdvance(e);
+    });
     btnOpenInvitation.addEventListener('click', (e) => {
       e.stopPropagation();
       triggerCoverAdvance(e);
     });
   }
 
-  // Cover Card click handler
-  coverCard.addEventListener('click', triggerCoverAdvance);
+  // Cover Card click / tap handler
+  coverCard.addEventListener('touchend', (e) => {
+    if (!justSwiped) {
+      triggerCoverAdvance(e);
+    }
+  });
+  coverCard.addEventListener('click', (e) => {
+    if (!justSwiped) {
+      triggerCoverAdvance(e);
+    }
+  });
   coverCard.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') {
       triggerCoverAdvance(e);
@@ -249,21 +306,23 @@ function initInvitationApp() {
   // Step 1: Click anywhere on cover stage
   stepCover.addEventListener('click', (e) => {
     if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) return;
-    triggerCoverAdvance(e);
-  });
-
-  // Step 2: Click or tap closed folded invitation to unfold
-  bookContainer.addEventListener('click', (e) => {
-    if (justSwiped || isAnimating) return;
-    if (e.target.closest('.qr-hitbox') || e.target.closest('.nav-btn')) return;
-
-    if (currentStep === 2) {
-      unfoldInvitation();
+    if (!justSwiped) {
+      triggerCoverAdvance(e);
     }
   });
 
-  const foldedCardCover = document.getElementById('foldedCardCover');
+  // Step 2: Click or tap closed folded invitation to unfold
   if (foldedCardCover) {
+    foldedCardCover.addEventListener('touchend', (e) => {
+      if (!justSwiped && currentStep === 2) {
+        unfoldInvitation();
+      }
+    });
+    foldedCardCover.addEventListener('click', (e) => {
+      if (!justSwiped && currentStep === 2) {
+        unfoldInvitation();
+      }
+    });
     foldedCardCover.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -273,6 +332,15 @@ function initInvitationApp() {
       }
     });
   }
+
+  bookContainer.addEventListener('click', (e) => {
+    if (justSwiped || isAnimating) return;
+    if (e.target.closest('.qr-hitbox') || e.target.closest('.nav-btn')) return;
+
+    if (currentStep === 2) {
+      unfoldInvitation();
+    }
+  });
 
   // Step 3: Tap center panel to fold invitation
   if (panelCenter) {

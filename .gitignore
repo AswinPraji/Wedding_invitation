@@ -3,3 +3,6 @@ dist/
 .env
 .env.*
 !.env.example
+.edge-*
+test_*.js
+
