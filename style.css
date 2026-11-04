@@ -132,6 +132,7 @@ html, body {
 .step-cover {
   cursor: grab;
   padding: 12px;
+  touch-action: pan-y;
 }
 
 .step-cover:active {
@@ -238,6 +239,7 @@ html, body {
   justify-content: flex-start;
   padding: 12px 10px 10px;
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 /* Discreet Minimalist Top Nav */

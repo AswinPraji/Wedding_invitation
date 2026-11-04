@@ -1,42 +1,55 @@
 /**
  * Wedding Invitation Interactive Controller
  * Follows exact flow:
- * Step 1: Initial Cover Card -> Swipe left / tap to go to Step 2
- * Step 2: Closed Book -> Tap to open realistic 3D book
+ * Step 1: Initial Cover Card -> Swipe left / drag / tap to go to Step 2
+ * Step 2: Closed Book -> Tap / drag left to open realistic 3D book (drag right to go back to cover)
  * Step 3: Open Book Spread (Left & Right pages) with clickable QR locations -> Close book returns to Step 2
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Elements
+function initInvitationApp() {
+  // DOM Elements
   const stepCover = document.getElementById('stepCover');
   const stepBook = document.getElementById('stepBook');
   const coverCard = document.getElementById('coverCard');
-  const coverCardContainer = document.getElementById('coverCardContainer');
   const bookContainer = document.getElementById('bookContainer');
   const turningLeaf = document.getElementById('turningLeaf');
   const btnBackToCover = document.getElementById('btnBackToCover');
   const btnCloseBook = document.getElementById('btnCloseBook');
+  const pageLeft = document.getElementById('pageLeft');
   const qrChurch = document.getElementById('qrChurch');
   const qrReception = document.getElementById('qrReception');
 
-  // State
+  // Navigation State
   let currentStep = 1; // 1 = Cover, 2 = Closed Book, 3 = Open Book
   let isAnimating = false;
+  let animTimer = null;
+  let justSwiped = false;
+
+  function setAnimating(durationMs, callback) {
+    isAnimating = true;
+    if (animTimer) clearTimeout(animTimer);
+    animTimer = setTimeout(() => {
+      isAnimating = false;
+      if (typeof callback === 'function') {
+        callback();
+      }
+    }, durationMs);
+  }
 
   // =========================================================================
-  // STEP 1 -> STEP 2: Transition from Cover to Closed Book
+  // STEP TRANSITIONS
   // =========================================================================
+
+  // STEP 1 -> STEP 2: Transition from Cover to Closed Book
   function goToStep2() {
     if (currentStep !== 1 || isAnimating) return;
-    isAnimating = true;
 
-    // Slide out cover
     stepCover.classList.add('slide-out');
 
-    setTimeout(() => {
+    setAnimating(450, () => {
       stepCover.classList.remove('active', 'slide-out');
-      
-      // Ensure book is in closed state
+
+      // Ensure book starts in closed state
       bookContainer.classList.remove('open', 'animating');
       bookContainer.classList.add('closed');
       stepBook.classList.remove('book-is-open');
@@ -44,61 +57,27 @@ document.addEventListener('DOMContentLoaded', () => {
       // Activate Step 2
       stepBook.classList.add('active');
       currentStep = 2;
-      isAnimating = false;
-    }, 450);
+      updateResponsiveLayout();
+    });
   }
 
   // STEP 2 -> STEP 1: Back to Cover
   function goToStep1() {
     if (currentStep !== 2 || isAnimating) return;
-    isAnimating = true;
 
     stepBook.classList.remove('active');
-    setTimeout(() => {
+
+    setAnimating(350, () => {
+      stepCover.classList.remove('slide-out');
       stepCover.classList.add('active');
       currentStep = 1;
-      isAnimating = false;
-    }, 350);
+      updateResponsiveLayout();
+    });
   }
 
-  // Click on Cover Card to go to Step 2
-  coverCard.addEventListener('click', () => {
-    goToStep2();
-  });
-
-  // Touch Swipe on Cover Card
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchEndX = 0;
-  let touchEndY = 0;
-  const SWIPE_THRESHOLD = 40;
-
-  coverCardContainer.addEventListener('touchstart', (e) => {
-    touchStartX = e.changedTouches[0].screenX;
-    touchStartY = e.changedTouches[0].screenY;
-  }, { passive: true });
-
-  coverCardContainer.addEventListener('touchend', (e) => {
-    touchEndX = e.changedTouches[0].screenX;
-    touchEndY = e.changedTouches[0].screenY;
-    handleCoverSwipe();
-  }, { passive: true });
-
-  function handleCoverSwipe() {
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
-    // Horizontal swipe left
-    if (Math.abs(diffX) > Math.abs(diffY) && diffX < -SWIPE_THRESHOLD) {
-      goToStep2();
-    }
-  }
-
-  // =========================================================================
   // STEP 2 -> STEP 3: Book Opening Animation
-  // =========================================================================
   function openBook() {
     if (currentStep !== 2 || isAnimating) return;
-    isAnimating = true;
 
     if (navigator.vibrate) {
       try { navigator.vibrate(15); } catch (_) {}
@@ -109,20 +88,15 @@ document.addEventListener('DOMContentLoaded', () => {
     bookContainer.classList.add('open');
     stepBook.classList.add('book-is-open');
 
-    // After animation finishes
-    setTimeout(() => {
+    setAnimating(1250, () => {
       bookContainer.classList.remove('animating');
       currentStep = 3;
-      isAnimating = false;
-    }, 1250);
+    });
   }
 
-  // =========================================================================
   // STEP 3 -> STEP 2: Book Closing Animation
-  // =========================================================================
-  function closeBook() {
+  function closeBook(onFinished) {
     if (currentStep !== 3 || isAnimating) return;
-    isAnimating = true;
 
     if (navigator.vibrate) {
       try { navigator.vibrate(15); } catch (_) {}
@@ -133,31 +107,123 @@ document.addEventListener('DOMContentLoaded', () => {
     bookContainer.classList.add('closed');
     stepBook.classList.remove('book-is-open');
 
-    // After animation finishes
-    setTimeout(() => {
+    setAnimating(1250, () => {
       bookContainer.classList.remove('animating');
       currentStep = 2;
-      isAnimating = false;
-    }, 1250);
+      if (typeof onFinished === 'function') {
+        onFinished();
+      }
+    });
   }
 
-  // Tap Turning Leaf (Closed Book Cover) to open
+  // =========================================================================
+  // GESTURE & SWIPE CONTROLLER (Touch & Mouse unified)
+  // Supports:
+  // - Tap / click to advance
+  // - Horizontal swipe / drag (left: next, right: back)
+  // - Ignores vertical drags to prevent accidental navigation during scroll
+  // =========================================================================
+
+  function enableHorizontalGestures(element, { onSwipeLeft, onSwipeRight }) {
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    let isTracking = false;
+
+    element.addEventListener('pointerdown', (e) => {
+      // Don't intercept clicks on navigation buttons or QR hotspots
+      if (e.target.closest('.nav-btn') || e.target.closest('.qr-hitbox')) {
+        return;
+      }
+      // For mouse, only track left button
+      if (e.pointerType === 'mouse' && e.button !== 0) {
+        return;
+      }
+
+      startX = e.clientX;
+      startY = e.clientY;
+      startTime = Date.now();
+      isTracking = true;
+    }, { passive: true });
+
+    element.addEventListener('pointermove', (e) => {
+      if (!isTracking) return;
+    }, { passive: true });
+
+    element.addEventListener('pointerup', (e) => {
+      if (!isTracking) return;
+      isTracking = false;
+
+      const diffX = e.clientX - startX;
+      const diffY = e.clientY - startY;
+      const absX = Math.abs(diffX);
+      const absY = Math.abs(diffY);
+      const elapsed = Date.now() - startTime;
+
+      // Require at least 35px horizontal travel AND horizontal dominance over vertical
+      if (absX >= 35 && absX > absY * 1.25 && elapsed < 1000) {
+        justSwiped = true;
+        setTimeout(() => { justSwiped = false; }, 300);
+
+        if (diffX < 0 && typeof onSwipeLeft === 'function') {
+          onSwipeLeft();
+        } else if (diffX > 0 && typeof onSwipeRight === 'function') {
+          onSwipeRight();
+        }
+      }
+    }, { passive: true });
+
+    element.addEventListener('pointercancel', () => {
+      isTracking = false;
+    }, { passive: true });
+  }
+
+  // Step 1 Cover Gestures: Swipe left to go to Step 2
+  enableHorizontalGestures(stepCover, {
+    onSwipeLeft: () => {
+      if (currentStep === 1) goToStep2();
+    }
+  });
+
+  // Step 2 & 3 Book Gestures
+  enableHorizontalGestures(stepBook, {
+    onSwipeLeft: () => {
+      if (currentStep === 2) openBook();
+    },
+    onSwipeRight: () => {
+      if (currentStep === 3) {
+        closeBook();
+      } else if (currentStep === 2) {
+        goToStep1();
+      }
+    }
+  });
+
+  // =========================================================================
+  // CLICK & TAP HANDLERS
+  // =========================================================================
+
+  // Step 1: Click or tap cover to advance to Step 2
+  coverCard.addEventListener('click', (e) => {
+    if (justSwiped) return;
+    if (currentStep === 1) {
+      goToStep2();
+    }
+  });
+
+  // Step 2: Click or tap closed book / turning leaf to open
   turningLeaf.addEventListener('click', (e) => {
+    if (justSwiped) return;
     if (currentStep === 2) {
       e.stopPropagation();
       openBook();
     }
   });
 
-  // Close Book Button or tap left page when book is open
-  btnCloseBook.addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeBook();
-  });
-
-  const pageLeft = document.getElementById('pageLeft');
+  // Step 3: Tap left page to close book
   if (pageLeft) {
     pageLeft.addEventListener('click', (e) => {
+      if (justSwiped) return;
       if (currentStep === 3 && !isAnimating) {
         e.stopPropagation();
         closeBook();
@@ -165,46 +231,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Back to Cover Button
+  // Top Nav: Close Book Button
+  btnCloseBook.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (currentStep === 3) {
+      closeBook();
+    }
+  });
+
+  // Top Nav: Back to Cover Button
   btnBackToCover.addEventListener('click', (e) => {
     e.stopPropagation();
     if (currentStep === 3) {
-      // If currently open, close first then go to step 1
-      closeBook();
-      setTimeout(() => {
+      closeBook(() => {
         goToStep1();
-      }, 1280);
-    } else {
+      });
+    } else if (currentStep === 2) {
       goToStep1();
     }
   });
 
-  // Touch Swipe inside Step 2 (Closed Book)
-  let bookTouchStartX = 0;
-  let bookTouchStartY = 0;
-
-  stepBook.addEventListener('touchstart', (e) => {
-    bookTouchStartX = e.changedTouches[0].screenX;
-    bookTouchStartY = e.changedTouches[0].screenY;
-  }, { passive: true });
-
-  stepBook.addEventListener('touchend', (e) => {
-    const diffX = e.changedTouches[0].screenX - bookTouchStartX;
-    const diffY = e.changedTouches[0].screenY - bookTouchStartY;
-    
-    // In Step 2: Swipe left opens book; swipe right goes back to cover
-    if (currentStep === 2 && !isAnimating) {
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX < -SWIPE_THRESHOLD) {
-          openBook();
-        } else if (diffX > SWIPE_THRESHOLD) {
-          goToStep1();
-        }
-      }
-    }
-  }, { passive: true });
-
-  // Keyboard navigation support (Arrow keys, Space, Enter)
+  // Keyboard navigation support (Arrow keys, Space, Enter, Escape)
   document.addEventListener('keydown', (e) => {
     if (isAnimating) return;
 
@@ -223,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Prevent QR hotspots from propagating clicks to other book triggers
+  // QR Hotspots: allow default navigation (opens in new tab)
   [qrChurch, qrReception].forEach(hotspot => {
     if (hotspot) {
       hotspot.addEventListener('click', (e) => {
@@ -231,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
           e.preventDefault();
           return false;
         }
-        // Let it open link in new tab naturally
       });
     }
   });
@@ -282,13 +328,20 @@ document.addEventListener('DOMContentLoaded', () => {
     rootStyle.setProperty('--closed-scale', closedScale.toFixed(4));
   }
 
-  // Run immediately and bind listeners
+  // Initial calculation & event listeners
   updateResponsiveLayout();
   window.addEventListener('resize', updateResponsiveLayout);
   window.addEventListener('orientationchange', () => {
     setTimeout(updateResponsiveLayout, 100);
   });
-  if (window.visualViewport) {
+  if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
     window.visualViewport.addEventListener('resize', updateResponsiveLayout);
   }
-});
+}
+
+// Ensure execution whether DOM is loading, interactive, or already complete
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initInvitationApp);
+} else {
+  initInvitationApp();
+}
